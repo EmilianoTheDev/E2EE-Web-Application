@@ -7,7 +7,7 @@ import Input from '../Input/Input';
 import { encryptMessage } from '../../Encryption';
 import '../Chat/chat.css';
 
-const ENDPOINT = process.env.REACT_APP_SERVER_URL || 'http://localhost:3001';
+const ENDPOINT = process.env.REACT_APP_SERVER_URL;
 
 let socket;
 
@@ -19,6 +19,11 @@ const Chat = ({ location }) => {
 
   useEffect(() => {
     const { name, room } = queryString.parse(window.location.search);
+
+    if (!ENDPOINT) {
+      alert('Missing REACT_APP_SERVER_URL. Set it to the Socket.IO server URL.');
+      return undefined;
+    }
 
     socket = io(ENDPOINT);
 
@@ -37,9 +42,17 @@ const Chat = ({ location }) => {
   }, []);
   
   useEffect(() => {
+    if (!socket) {
+      return undefined;
+    }
+
     socket.on('message', message => {
       setMessages(messages => [ ...messages, message ]);
     });
+
+    return () => {
+      socket.off('message');
+    };
     
 }, []);
 
