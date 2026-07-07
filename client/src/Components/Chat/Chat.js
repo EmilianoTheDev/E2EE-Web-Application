@@ -65,9 +65,12 @@ const Chat = ({ location }) => {
     }
   }
 
-  const copyChatUrl = () => {
+  const copyInviteLink = () => {
     if (navigator.clipboard) {
-      navigator.clipboard.writeText(window.location.href);
+      const inviteUrl = new URL(window.location.origin);
+      inviteUrl.searchParams.set('room', room);
+
+      navigator.clipboard.writeText(inviteUrl.toString());
     }
   };
 
@@ -77,7 +80,7 @@ const Chat = ({ location }) => {
         <div className="chatStage">
           <div className="chatHeader">
             <h1>Your_Secure_<br />Chat</h1>
-            <button className="copyButton" type="button" onClick={copyChatUrl}>Click to copy chat URL</button>
+            <button className="copyButton" type="button" onClick={copyInviteLink}>Copy Invite Link</button>
           </div>
           <div className="container">
             <InfoBar room={room} />
