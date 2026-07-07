@@ -1,17 +1,8 @@
 # E2EE Web Application
 
-A small real-time chat application built with React, Express, and Socket.IO. The project was originally made to explore how browser clients can exchange messages through a server while keeping message content encrypted before it leaves the browser.
+A real-time encrypted messaging demo exploring browser-side encryption, shared room secrets, and Socket.IO chat rooms.
 
-## Why We Made This
-
-This app was built as a learning project for end-to-end encrypted messaging concepts:
-
-- Practice building a full-stack JavaScript application with a React client and Node/Express server.
-- Learn how Socket.IO rooms can support real-time chat between multiple users.
-- Experiment with browser-native cryptography through the Web Crypto API.
-- Demonstrate the difference between transporting messages through a server and letting the server read those messages.
-
-The current encryption is a demo implementation that derives a shared room key from the room name. It is useful for showing the flow of encrypted client-to-client messages, but it is not production-grade key management.
+This is a portfolio/academic demo, not a production-ready E2EE messenger. It is useful for showing the shape of browser-side encryption and real-time room messaging, but it does not implement production key exchange, identity verification, account security, persistence, abuse controls, or a complete threat model.
 
 ## Screenshots
 
@@ -31,18 +22,46 @@ The current encryption is a demo implementation that derives a shared room key f
 
 ```text
 .
-├── client/   # React chat UI
-├── server/   # Express + Socket.IO API
-└── docs/
-    └── screenshots/ # Add README screenshots here
+├── client/        # Create React App frontend
+├── server/        # Express + Socket.IO server
+├── docs/          # Portfolio screenshots
+├── scripts/       # Screenshot capture helper
+├── .env.example   # Combined environment variable reference
+└── vercel.json    # Vercel config for deploying the frontend
 ```
+
+The frontend and backend are separate apps. The frontend builds to static files and is a good fit for Vercel. The backend is a long-running Socket.IO server and should be deployed separately on a host that supports persistent WebSocket connections.
 
 ## Requirements
 
 - Node.js 18 or newer
 - npm 10 or newer
 
-This update was verified locally with Node `v23.10.0` and npm `10.9.2`.
+## Environment Variables
+
+Client, in `client/.env` or Vercel project settings:
+
+```bash
+REACT_APP_SERVER_URL=http://localhost:3001
+```
+
+Server, in `server/.env` or the server host settings:
+
+```bash
+PORT=3001
+CLIENT_ORIGIN=http://localhost:3000
+```
+
+For production, set:
+
+- `REACT_APP_SERVER_URL` to the public HTTPS URL of the Socket.IO server, such as `https://your-chat-server.onrender.com`.
+- `CLIENT_ORIGIN` to the public Vercel frontend URL, such as `https://your-project.vercel.app`.
+
+`CLIENT_ORIGIN` also accepts comma-separated origins for local plus deployed testing:
+
+```bash
+CLIENT_ORIGIN=http://localhost:3000,https://your-project.vercel.app
+```
 
 ## Run Locally
 
@@ -51,6 +70,7 @@ Install and start the server:
 ```bash
 cd server
 npm install
+cp .env.example .env
 npm start
 ```
 
@@ -61,59 +81,105 @@ In a second terminal, install and start the client:
 ```bash
 cd client
 npm install
+cp .env.example .env
 npm start
 ```
 
 The client runs at `http://localhost:3000` by default.
 
-If port `3000` is already in use, start the client on another port and update the server CORS origin:
-
-```bash
-# terminal 1
-cd server
-CLIENT_ORIGIN=http://localhost:3002 npm start
-
-# terminal 2
-cd client
-PORT=3002 npm start
-```
-
 ## Build Locally
 
-To make sure the React app can compile for production:
+Build the React frontend:
 
 ```bash
 cd client
 npm run build
 ```
 
-The compiled output is written to `client/build/`.
+The compiled frontend is written to `client/build/`.
 
-## Environment Variables
-
-Copy the examples if you want to customize ports or URLs:
+The Socket.IO server does not have a compile step. It runs with:
 
 ```bash
-cp server/.env.example server/.env
-cp client/.env.example client/.env
+cd server
+npm start
 ```
+
+## Deploying
+
+### Frontend on Vercel
+
+This repository includes `vercel.json` for deploying the Create React App frontend from the repo root.
+
+In Vercel:
+
+- Import the repository.
+- Keep the project root as the repository root.
+- Add `REACT_APP_SERVER_URL` with the public URL of the deployed Socket.IO server.
+- Deploy.
+
+The Vercel config runs:
+
+```bash
+cd client && npm ci
+cd client && npm run build
+```
+
+and serves `client/build`. The SPA rewrite in `vercel.json` keeps direct links like `/chat?name=...&room=...` working.
+
+### Backend on Render, Railway, Fly.io, or Similar
+
+Do not rely on Vercel serverless functions for this Socket.IO backend. Socket.IO needs a long-running process and reliable WebSocket support, while Vercel serverless functions are request/response oriented and not designed for persistent socket servers.
+
+Deploy `server/` to a platform such as Render, Railway, Fly.io, or another Node host that supports WebSockets. Configure:
+
+Render settings:
+
+- Root Directory: `server`
+- Build Command: `npm install`
+- Start Command: `npm start`
+- Environment Variable: `CLIENT_ORIGIN=https://your-project.vercel.app`
+
+Server environment:
+
+```bash
+PORT=<provided by host>
+CLIENT_ORIGIN=https://your-project.vercel.app
+```
+
+Then update the Vercel frontend environment variable:
+
+```bash
+REACT_APP_SERVER_URL=https://your-chat-server.example.com
+```
+
+## Available Scripts
 
 Client:
 
-- `REACT_APP_SERVER_URL`: Socket.IO server URL. Defaults to `http://localhost:3001`.
+- `npm start`: run the React development server.
+- `npm run build`: build the production React bundle.
+- `npm test`: run the Create React App test runner.
 
 Server:
 
-- `PORT`: API/socket server port. Defaults to `3001`.
-- `CLIENT_ORIGIN`: React app origin allowed by CORS. Defaults to `http://localhost:3000`.
+- `npm start`: run the Express + Socket.IO server.
+- `npm run dev`: run the server with Nodemon.
+
+## Security Limitations
+
+- Demo-only shared secret: the room name is used to derive the message encryption key.
+- No production key exchange: users do not authenticate each other or negotiate keys securely.
+- No identity verification: a user name is only a room-local display value.
+- In-memory server state: room membership is stored in process memory and disappears on restart.
+- Metadata is not protected: the server still sees room names, socket connections, timing, and message sizes.
+- No persistence or multi-instance coordination: scaling the server would require external state and a Socket.IO adapter.
+
+Use this project as a portfolio demonstration of concepts, not as a secure messaging product.
 
 ## Updating Screenshots
 
-The README screenshots live in `docs/screenshots/`:
-
-- Join screen: `docs/screenshots/join.png`
-- Chat room: `docs/screenshots/chat-room.png`
-- Message flow: `docs/screenshots/message-flow.png`
+The README screenshots live in `docs/screenshots/`.
 
 To manually refresh them, open the app in two browser tabs or windows, join the same room with two different names, and send a message.
 
@@ -143,22 +209,3 @@ PORT=3002 BROWSER=none npm start
 ```bash
 node scripts/capture-screenshots.mjs
 ```
-
-## Available Scripts
-
-Server:
-
-- `npm start`: run the server with Node.
-- `npm run dev`: run the server with Nodemon for local development.
-
-Client:
-
-- `npm start`: run the React dev server.
-- `npm run build`: build the production React bundle.
-- `npm test`: run Create React App tests.
-
-## Notes
-
-- The server relays Socket.IO events and tracks users in memory. Restarting the server clears room/user state.
-- The encryption demo requires browser crypto support and works on localhost.
-- Do not use the room name as a real production encryption secret. A production E2EE app needs authenticated key exchange, identity verification, secure key storage, and a stronger threat model.
