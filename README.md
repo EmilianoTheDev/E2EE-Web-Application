@@ -202,20 +202,11 @@ In Vercel:
 - Add `REACT_APP_SERVER_URL` with the public URL of the deployed Socket.IO server.
 - Deploy.
 
-The Vercel config runs:
+The SPA rewrite in `vercel.json` keeps direct links like `/chat?name=...&room=...` working.
 
-```bash
-cd client && npm ci
-cd client && npm run build
-```
+### Backend on Render
 
-and serves `client/build`. The SPA rewrite in `vercel.json` keeps direct links like `/chat?name=...&room=...` working.
-
-### Backend on Render, Railway, Fly.io, or Similar
-
-Do not rely on Vercel serverless functions for this Socket.IO backend. Socket.IO needs a long-running process and reliable WebSocket support, while Vercel serverless functions are request/response oriented and not designed for persistent socket servers.
-
-Deploy `server/` to a platform such as Render, Railway, Fly.io, or another Node host that supports WebSockets. Configure:
+Deploy `server/` to a platform on Render
 
 Render settings:
 
@@ -267,38 +258,5 @@ Server:
 | Hover-to-decrypt educational UI | No | The current UI displays decrypted messages directly or an error if decrypting fails. |
 | Copy chat URL | Yes | The chat screen includes a button to copy the current room URL. |
 | In-memory user and room state | Yes | Connected users are stored in a process-local array and disappear on restart. |
-| Heroku deployment | No | The revived deployment path documents Vercel for frontend and Render/Railway/Fly.io-style hosts for backend. |
+| Heroku deployment | No | The revived deployment path documents Vercel for frontend and Render hosts for backend. |
 | Production-ready E2EE | No | The project is explicitly documented as an educational portfolio demo. |
-
-## Updating Screenshots
-
-The README screenshots live in `docs/screenshots/`.
-
-To manually refresh them, open the app in two browser tabs or windows, join the same room with two different names, and send a message.
-
-There is also a small Chrome DevTools capture script:
-
-```bash
-cd server
-CLIENT_ORIGIN=http://localhost:3002 npm start
-```
-
-```bash
-cd client
-PORT=3002 BROWSER=none npm start
-```
-
-```bash
-"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
-  --headless=new \
-  --remote-debugging-port=9223 \
-  --user-data-dir=/private/tmp/e2ee-chrome-profile \
-  --disable-gpu \
-  --no-first-run \
-  --no-default-browser-check \
-  about:blank
-```
-
-```bash
-node scripts/capture-screenshots.mjs
-```
