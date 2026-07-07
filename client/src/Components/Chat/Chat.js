@@ -80,7 +80,7 @@ const Chat = ({ location }) => {
         <div className="chatStage">
           <div className="chatHeader">
             <h1>Your_Secure_<br />Chat</h1>
-            <button className="copyButton" type="button" onClick={copyInviteLink}>Copy Invite Link</button>
+            <button className="copyButton" type="button" onClick={copyInviteLink}>CLICK TO COPY CHAT URL</button>
           </div>
           <div className="container">
             <InfoBar room={room} />
