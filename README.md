@@ -1,70 +1,164 @@
-# Getting Started with Create React App
+# E2EE Web Application
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A small real-time chat application built with React, Express, and Socket.IO. The project was originally made to explore how browser clients can exchange messages through a server while keeping message content encrypted before it leaves the browser.
+
+## Why We Made This
+
+This app was built as a learning project for end-to-end encrypted messaging concepts:
+
+- Practice building a full-stack JavaScript application with a React client and Node/Express server.
+- Learn how Socket.IO rooms can support real-time chat between multiple users.
+- Experiment with browser-native cryptography through the Web Crypto API.
+- Demonstrate the difference between transporting messages through a server and letting the server read those messages.
+
+The current encryption is a demo implementation that derives a shared room key from the room name. It is useful for showing the flow of encrypted client-to-client messages, but it is not production-grade key management.
+
+## Screenshots
+
+### Join Room
+
+![Join screen](docs/screenshots/join.png)
+
+### Chat Room
+
+![Chat room](docs/screenshots/chat-room.png)
+
+### Message Flow
+
+![Message flow](docs/screenshots/message-flow.png)
+
+## Project Structure
+
+```text
+.
+├── client/   # React chat UI
+├── server/   # Express + Socket.IO API
+└── docs/
+    └── screenshots/ # Add README screenshots here
+```
+
+## Requirements
+
+- Node.js 18 or newer
+- npm 10 or newer
+
+This update was verified locally with Node `v23.10.0` and npm `10.9.2`.
+
+## Run Locally
+
+Install and start the server:
+
+```bash
+cd server
+npm install
+npm start
+```
+
+The server runs at `http://localhost:3001` by default.
+
+In a second terminal, install and start the client:
+
+```bash
+cd client
+npm install
+npm start
+```
+
+The client runs at `http://localhost:3000` by default.
+
+If port `3000` is already in use, start the client on another port and update the server CORS origin:
+
+```bash
+# terminal 1
+cd server
+CLIENT_ORIGIN=http://localhost:3002 npm start
+
+# terminal 2
+cd client
+PORT=3002 npm start
+```
+
+## Build Locally
+
+To make sure the React app can compile for production:
+
+```bash
+cd client
+npm run build
+```
+
+The compiled output is written to `client/build/`.
+
+## Environment Variables
+
+Copy the examples if you want to customize ports or URLs:
+
+```bash
+cp server/.env.example server/.env
+cp client/.env.example client/.env
+```
+
+Client:
+
+- `REACT_APP_SERVER_URL`: Socket.IO server URL. Defaults to `http://localhost:3001`.
+
+Server:
+
+- `PORT`: API/socket server port. Defaults to `3001`.
+- `CLIENT_ORIGIN`: React app origin allowed by CORS. Defaults to `http://localhost:3000`.
+
+## Updating Screenshots
+
+The README screenshots live in `docs/screenshots/`:
+
+- Join screen: `docs/screenshots/join.png`
+- Chat room: `docs/screenshots/chat-room.png`
+- Message flow: `docs/screenshots/message-flow.png`
+
+To manually refresh them, open the app in two browser tabs or windows, join the same room with two different names, and send a message.
+
+There is also a small Chrome DevTools capture script:
+
+```bash
+cd server
+CLIENT_ORIGIN=http://localhost:3002 npm start
+```
+
+```bash
+cd client
+PORT=3002 BROWSER=none npm start
+```
+
+```bash
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  --headless=new \
+  --remote-debugging-port=9223 \
+  --user-data-dir=/private/tmp/e2ee-chrome-profile \
+  --disable-gpu \
+  --no-first-run \
+  --no-default-browser-check \
+  about:blank
+```
+
+```bash
+node scripts/capture-screenshots.mjs
+```
 
 ## Available Scripts
 
-In the project directory, you can run:
+Server:
 
-### `npm start`
+- `npm start`: run the server with Node.
+- `npm run dev`: run the server with Nodemon for local development.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Client:
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- `npm start`: run the React dev server.
+- `npm run build`: build the production React bundle.
+- `npm test`: run Create React App tests.
 
-### `npm test`
+## Notes
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- The server relays Socket.IO events and tracks users in memory. Restarting the server clears room/user state.
+- The encryption demo requires browser crypto support and works on localhost.
+- Do not use the room name as a real production encryption secret. A production E2EE app needs authenticated key exchange, identity verification, secure key storage, and a stronger threat model.

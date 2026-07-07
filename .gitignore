@@ -1,1 +1,8 @@
-node_modules
+.DS_Store
+node_modules/
+build/
+coverage/
+netlify/
+.env
+.env.local
+npm-debug.log*
