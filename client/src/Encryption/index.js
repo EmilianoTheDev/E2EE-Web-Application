@@ -1,96 +1,64 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
+const encoder = new TextEncoder();
+const decoder = new TextDecoder();
+const algorithm = 'AES-GCM';
+const keySalt = 'e2ee-chat-demo-salt';
 
-const Encrypt = () => {
-      /*
-  Store the calculated ciphertext and IV here, so we can decrypt the message later.
-  */
-  let ciphertext;
-  let iv;
+const toBase64 = (buffer) => btoa(String.fromCharCode(...new Uint8Array(buffer)));
 
-  /*
-  Fetch the contents of the "message" textbox, and encode it
-  in a form we can use for the encrypt operation.
-  */
-function getMessageEncoding() {
-    const messageBox = document.querySelector(".input");
-    let message = messageBox.value;
-    let enc = new TextEncoder();
-    return enc.encode(message);
-  }
+const fromBase64 = (value) => Uint8Array.from(atob(value), (char) => char.charCodeAt(0));
 
-  /*
-  Get the encoded message, encrypt it and display a representation
-  of the ciphertext in the "Ciphertext" element.
-  */
-async function encryptMessage(key) {
-    let encoded = getMessageEncoding();
-    // The iv must never be reused with a given key.
-    iv = window.crypto.getRandomValues(new Uint8Array(12));
-    ciphertext = await window.crypto.subtle.encrypt(
-      {
-        name: "AES-GCM",
-        iv: iv
-      },
-      key,
-      encoded
-    );
+const getRoomKey = async (room) => {
+  const baseKey = await window.crypto.subtle.importKey(
+    'raw',
+    encoder.encode(room),
+    'PBKDF2',
+    false,
+    ['deriveKey'],
+  );
 
-    let buffer = new Uint8Array(ciphertext, 0, 5);
-    const ciphertextValue = document.querySelector(".input");
-    ciphertextValue.classList.add('fade-in');
-    ciphertextValue.addEventListener('animationend', () => {
-      ciphertextValue.classList.remove('fade-in');
-    });
-    ciphertextValue.textContent = `${buffer}...[${ciphertext.byteLength} bytes total]`;
-  }
-
-  /*
-  Fetch the ciphertext and decrypt it.
-  Write the decrypted message into the "Decrypted" box.
-  */
-async function decryptMessage(key) {
-    let decrypted = await window.crypto.subtle.decrypt(
-      {
-        name: "AES-GCM",
-        iv: iv
-      },
-      key,
-      ciphertext
-    );
-
-    let dec = new TextDecoder();
-    const decryptedValue = document.querySelector(".input .decrypted-value");
-    decryptedValue.classList.add('fade-in');
-    decryptedValue.addEventListener('animationend', () => {
-      decryptedValue.classList.remove('fade-in');
-    });
-    decryptedValue.textContent = dec.decode(decrypted);
-  }
-
-  /*
-  Generate an encryption key, then set up event listeners
-  on the "Encrypt" and "Decrypt" buttons.
-  */
-  window.crypto.subtle.generateKey(
+  return window.crypto.subtle.deriveKey(
     {
-        name: "AES-GCM",
-        length: 256,
+      name: 'PBKDF2',
+      salt: encoder.encode(keySalt),
+      iterations: 100000,
+      hash: 'SHA-256',
     },
-    true,
-    ["encrypt", "decrypt"]
-  ).then((key) => {
-    const encryptButton = document.querySelector(".sendButton");
-    encryptButton.addEventListener("click", () => {
-        encryptMessage(key);
-    });
+    baseKey,
+    { name: algorithm, length: 256 },
+    false,
+    ['encrypt', 'decrypt'],
+  );
+};
 
-    // const decryptButton = document.querySelector(".aes-gcm .decrypt-button");
-    // decryptButton.addEventListener("click", () => {
-    //   decryptMessage(key);
-    // });
+export const encryptMessage = async (message, room) => {
+  const key = await getRoomKey(room);
+  const iv = window.crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await window.crypto.subtle.encrypt(
+    { name: algorithm, iv },
+    key,
+    encoder.encode(message),
+  );
+
+  return JSON.stringify({
+    encrypted: true,
+    iv: toBase64(iv),
+    text: toBase64(encrypted),
   });
-    
-}
+};
 
-export default Encrypt; 
+export const decryptMessage = async (payload, room) => {
+  const message = JSON.parse(payload);
+
+  if (!message.encrypted) {
+    return payload;
+  }
+
+  const key = await getRoomKey(room);
+  const decrypted = await window.crypto.subtle.decrypt(
+    { name: algorithm, iv: fromBase64(message.iv) },
+    key,
+    fromBase64(message.text),
+  );
+
+  return decoder.decode(decrypted);
+};

@@ -1,23 +1,20 @@
 import React, { useState, useEffect } from "react";
 import queryString from 'query-string';
 import io from "socket.io-client";
-import Navbar from "../Navbar/Navbar";
-import TextContainer from '../TextContainer/TextContainer';
 import Messages from '../Messages/Messages';
 import InfoBar from '../InfoBar/InfoBar';
 import Input from '../Input/Input';
-import encryptMessage  from '../../Encryption/index.js';
+import { encryptMessage } from '../../Encryption';
 import '../Chat/chat.css';
 
-const ENDPOINT = 'http://localhost:3001';
+const ENDPOINT = process.env.REACT_APP_SERVER_URL || 'http://localhost:3001';
 
 let socket;
 
 const Chat = ({ location }) => {
   const [name, setName] = useState('');
   const [room, setRoom] = useState('');
-  const [users, setUsers] = useState('');
-  const [message, setMessage] = useState([]);
+  const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
 
   useEffect(() => {
@@ -33,37 +30,49 @@ const Chat = ({ location }) => {
         alert(error);
       }
     });
-  }, [ENDPOINT, window.location.search]);
+    return () => {
+      socket.disconnect();
+      socket.off();
+    };
+  }, []);
   
   useEffect(() => {
     socket.on('message', message => {
       setMessages(messages => [ ...messages, message ]);
     });
     
-    socket.on("roomData", ({ users }) => {
-      setUsers(users);
-    });
 }, []);
 
-  const sendMessage = (event) => {
+  const sendMessage = async (event) => {
     event.preventDefault();
 
     if(message) {
-      socket.emit('sendMessage', encryptMessage(message), () => setMessage(''));
+      const encrypted = await encryptMessage(message, room);
+      socket.emit('sendMessage', encrypted, () => setMessage(''));
     }
   }
 
+  const copyChatUrl = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(window.location.href);
+    }
+  };
+
   return (
     <>
-    {/* <Navbar/> */}
       <div className="outerContainer">
-        <div className="container">
+        <div className="chatStage">
+          <div className="chatHeader">
+            <h1>Your_Secure_<br />Chat</h1>
+            <button className="copyButton" type="button" onClick={copyChatUrl}>Click to copy chat URL</button>
+          </div>
+          <div className="container">
             <InfoBar room={room} />
-            <Messages messages={messages} name={name} />
+            <Messages messages={messages} name={name} room={room} />
             <Input message={message} setMessage={setMessage} sendMessage={sendMessage} />
+          </div>
         </div>
-        {/* <TextContainer users={users}/> */}
-    </div>
+      </div>
     </>
 
   );
